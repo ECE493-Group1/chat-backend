@@ -8,7 +8,8 @@ import (
 	socketio "github.com/googollee/go-socket.io"
 )
 
-var chatRooms = make([]ChatRoom, 0)
+var chatRoomMap = make(map[string]*ChatRoom)
+var chatRoomNames = make([]string, 0)
 
 func GinMiddleware(allowOrigin string) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -75,17 +76,20 @@ func main() {
 
 	router.GET("/rooms", func(g *gin.Context) {
 		g.JSON(200, gin.H{
-			"rooms": chatRooms,
+			"rooms": chatRoomNames,
 		})
+		fmt.Println("Grabbed Rooms")
 	})
 
-	router.POST("/rooms", func(c *gin.Context) {
+	router.POST("/rooms", func(g *gin.Context) {
 		var newRoomDTO NewRoomDTO
-		err := c.BindJSON(&newRoomDTO)
+		err := g.BindJSON(&newRoomDTO)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(newRoomDTO.name)
+		chatRoomMap[newRoomDTO.Name] = NewChatRoom(newRoomDTO.Name)
+		chatRoomNames = append(chatRoomNames, newRoomDTO.Name)
+		fmt.Println(newRoomDTO.Name)
 	})
 	router.Run(port)
 }

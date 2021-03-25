@@ -1,5 +1,5 @@
 package main
 
 type NewRoomDTO struct {
-	name string `json:"roomname"`
+	Name string `json:"roomname"`
 }
