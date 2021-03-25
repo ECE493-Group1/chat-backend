@@ -3,46 +3,40 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
-	"time"
 
+	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
-	"github.com/googollee/go-socket.io/engineio"
-	"github.com/googollee/go-socket.io/engineio/transport"
-	"github.com/googollee/go-socket.io/engineio/transport/polling"
-	"github.com/googollee/go-socket.io/engineio/transport/websocket"
 )
 
-func allowOrigin(r *http.Request) bool {
+var chatRooms = make([]ChatRoom, 0)
 
-	return true
+func GinMiddleware(allowOrigin string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", allowOrigin)
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, Content-Length, X-CSRF-Token, Token, session, Origin, Host, Connection, Accept-Encoding, Accept-Language, X-Requested-With")
 
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Request.Header.Del("Origin")
+
+		c.Next()
+	}
 }
+
 func main() {
-	server, err := socketio.NewServer(&engineio.Options{
-
-		Transports: []transport.Transport{
-
-			&polling.Transport{
-
-				Client: &http.Client{
-
-					Timeout: time.Minute,
-				},
-
-				CheckOrigin: allowOrigin,
-			},
-
-			&websocket.Transport{
-
-				CheckOrigin: allowOrigin,
-			},
-		},
-	})
+	var port = ":8000"
+	router := gin.New()
+	server, err := socketio.NewServer(nil)
 
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	server.OnConnect("/", func(s socketio.Conn) error {
 		s.SetContext("")
 		fmt.Println("connected:", s.ID())
@@ -51,6 +45,7 @@ func main() {
 	})
 
 	server.OnEvent("/", "join", func(s socketio.Conn, msg string) {
+		fmt.Println("User joined")
 		s.Join(msg)
 	})
 
@@ -74,7 +69,23 @@ func main() {
 	go server.Serve()
 	defer server.Close()
 
-	http.Handle("/socket.io/", server)
-	log.Println("Serving at localhost:8000...")
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	router.Use(GinMiddleware("http://localhost:8080"))
+	router.GET("/socket.io/*any", gin.WrapH(server))
+	router.POST("/socket.io/*any", gin.WrapH(server))
+
+	router.GET("/rooms", func(g *gin.Context) {
+		g.JSON(200, gin.H{
+			"rooms": chatRooms,
+		})
+	})
+
+	router.POST("/rooms", func(c *gin.Context) {
+		var newRoomDTO NewRoomDTO
+		err := c.BindJSON(&newRoomDTO)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(newRoomDTO.name)
+	})
+	router.Run(port)
 }
