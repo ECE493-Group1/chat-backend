@@ -1,0 +1,1 @@
+This backend service handles the persistent websockets between users as well as other chat related endpoints.
