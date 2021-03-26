@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -10,6 +11,7 @@ import (
 
 var chatRoomMap = make(map[string]*ChatRoom)
 var chatRoomNames = make([]string, 0)
+var chatRoomIds = make([]string, 0)
 
 func GinMiddleware(allowOrigin string) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -45,17 +47,22 @@ func main() {
 		return nil
 	})
 
-	server.OnEvent("/", "join", func(s socketio.Conn, msg string) {
-		fmt.Println("User joined")
+	server.OnEvent("/", "JOIN", func(s socketio.Conn, msg string) {
+		fmt.Println("User joined: ", msg)
 		s.Join(msg)
 	})
 
-	server.OnEvent("/", "outgoing", func(s socketio.Conn, msg string) {
-		fmt.Println("Message Received:", msg)
-		server.BroadcastToRoom("/", "messages", "incoming", msg)
+	server.OnEvent("/", "SEND", func(s socketio.Conn, data string) {
+		var message MessageDTO
+		err := json.Unmarshal([]byte(data), &message)
+		if err != nil {
+			fmt.Println("Error unmarshaling ", data)
+		}
+		fmt.Println("Message Received:", message.Content)
+		server.BroadcastToRoom("/", message.RoomId, "RECEIVE", message.Content)
 	})
 
-	server.OnEvent("/", "bye", func(s socketio.Conn) string {
+	server.OnEvent("/", "LEAVE", func(s socketio.Conn) string {
 		last := s.Context().(string)
 		s.Emit("bye", last)
 		s.Close()
@@ -77,6 +84,7 @@ func main() {
 	router.GET("/rooms", func(g *gin.Context) {
 		g.JSON(200, gin.H{
 			"rooms": chatRoomNames,
+			"ids":   chatRoomIds,
 		})
 		fmt.Println("Grabbed Rooms")
 	})
@@ -87,8 +95,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		chatRoomMap[newRoomDTO.Name] = NewChatRoom(newRoomDTO.Name)
+		newRoom := NewChatRoom(newRoomDTO.Name)
+		chatRoomMap[newRoomDTO.Name] = newRoom
 		chatRoomNames = append(chatRoomNames, newRoomDTO.Name)
+		chatRoomIds = append(chatRoomIds, newRoom.id)
 		fmt.Println(newRoomDTO.Name)
 	})
 	router.Run(port)
