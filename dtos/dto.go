@@ -1,4 +1,4 @@
-package main
+package dto
 
 type NewRoomDTO struct {
 	Title     string   `json:"title"`
