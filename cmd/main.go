@@ -9,9 +9,11 @@ import (
 	socketio "github.com/googollee/go-socket.io"
 )
 
-var chatRoomMap = make(map[string]*ChatRoom)
-var chatRoomNames = make([]string, 0)
-var chatRoomIds = make([]string, 0)
+var (
+	chatRoomMap   = make(map[string]*ChatRoom)
+	chatRoomNames = make([]string, 0)
+	chatRoomIds   = make([]string, 0)
+)
 
 func GinMiddleware(allowOrigin string) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -32,10 +34,9 @@ func GinMiddleware(allowOrigin string) gin.HandlerFunc {
 }
 
 func main() {
-	var port = ":8000"
+	port := ":8000"
 	router := gin.New()
 	server, err := socketio.NewServer(nil)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -95,11 +96,15 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		newRoom := NewChatRoom(newRoomDTO.Name)
-		chatRoomMap[newRoomDTO.Name] = newRoom
-		chatRoomNames = append(chatRoomNames, newRoomDTO.Name)
+		newRoom := NewChatRoom(newRoomDTO.Title, newRoomDTO.Members, newRoomDTO.IsPrivate)
+		chatRoomMap[newRoomDTO.Title] = newRoom
+		chatRoomNames = append(chatRoomNames, newRoomDTO.Title)
 		chatRoomIds = append(chatRoomIds, newRoom.id)
-		fmt.Println(newRoomDTO.Name)
+		fmt.Println(newRoomDTO.Title)
+
+		g.JSON(200, NewRoomResponseDTO{
+			Id: newRoom.id,
+		})
 	})
 	router.Run(port)
 }

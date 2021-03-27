@@ -8,12 +8,20 @@ type Message struct {
 	sender  string
 	content string
 }
+
 type ChatRoom struct {
-	name     string
-	messages []Message
-	id       string
+	title     string
+	messages  []Message
+	id        string
+	users     []string
+	isPrivate bool
 }
 
-func NewChatRoom(name string) *ChatRoom {
-	return &ChatRoom{id: uuid.New().String(), name: name}
+func NewChatRoom(title string, users []string, isPrivate bool) *ChatRoom {
+	return &ChatRoom{
+		id:        uuid.New().String(),
+		title:     title,
+		users:     users,
+		isPrivate: isPrivate,
+	}
 }
