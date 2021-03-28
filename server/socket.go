@@ -29,7 +29,7 @@ func (s *SocketServer) init() {
 	}
 	s.server.OnConnect("/", s.onConnect)
 
-	s.server.OnEvent("/", "JOIN", s.onJoin)
+	s.server.OnEvent("/", "ENTER", s.onEnter)
 	s.server.OnEvent("/", "SEND", s.onSend)
 
 	s.server.OnEvent("/", "LEAVE", s.onLeave)
@@ -44,19 +44,21 @@ func (server *SocketServer) onConnect(s socketio.Conn) error {
 	return nil
 }
 
-func (server *SocketServer) onJoin(s socketio.Conn, msg string) {
-	fmt.Println("User joined: ", msg)
-	s.Join(msg)
+func (server *SocketServer) onEnter(s socketio.Conn, threadId string) {
+	fmt.Println("User joined: ", threadId)
+	s.Join(threadId)
+	s.Emit("RECEIVE_PREV", dto.ToMessageListDTO(server.threadManager.GetThreadMessages(threadId)))
 }
 
 func (server *SocketServer) onSend(s socketio.Conn, data string) {
-	var message dto.MessageDTO
+	var message dto.NewMessageDTO
 	err := json.Unmarshal([]byte(data), &message)
 	if err != nil {
 		fmt.Println("Error unmarshaling ", data)
 	}
 	fmt.Println("Message Received:", message.Content)
-	server.server.BroadcastToRoom("/", message.RoomId, "RECEIVE", message.Content)
+	server.server.BroadcastToRoom("/", message.RoomId, "RECEIVE", message)
+	server.threadManager.AddMessage(message.RoomId, dto.ToMessage(message))
 }
 
 func (server *SocketServer) onLeave(s socketio.Conn) string {

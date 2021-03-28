@@ -5,8 +5,8 @@ import (
 )
 
 type Message struct {
-	sender  string
-	content string
+	Sender  string
+	Content string
 }
 
 type ThreadRoom struct {
@@ -51,4 +51,8 @@ func (t *ThreadManager) GetAllRooms() ([]string, []string) {
 
 func (t *ThreadManager) AddMessage(id string, m *Message) {
 	t.threadRooms[id].messages = append(t.threadRooms[id].messages, *m)
+}
+
+func (t *ThreadManager) GetThreadMessages(threadId string) []Message {
+	return t.threadRooms[threadId].messages
 }
