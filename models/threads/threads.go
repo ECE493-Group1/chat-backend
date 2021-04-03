@@ -12,7 +12,7 @@ type Message struct {
 type ThreadRoom struct {
 	Title     string
 	Messages  []Message
-	Members   []string
+	Members   map[string]bool
 	Id        string
 	IsPrivate bool
 }
@@ -21,11 +21,15 @@ type ThreadManager struct {
 	threadRooms map[string]*ThreadRoom
 }
 
-func NewThreadRoom(title string, users []string, isPrivate bool) *ThreadRoom {
+func NewThreadRoom(title string, members []string, isPrivate bool) *ThreadRoom {
+	memberMap := make(map[string]bool)
+	for _, member := range members {
+		memberMap[member] = true
+	}
 	return &ThreadRoom{
 		Id:        uuid.New().String(),
 		Title:     title,
-		Members:   users,
+		Members:   memberMap,
 		IsPrivate: isPrivate,
 	}
 }
@@ -59,4 +63,21 @@ func (t *ThreadManager) GetThreadMessages(threadId string) []Message {
 
 func (t *ThreadManager) GetRoomInfo(threadId string) *ThreadRoom {
 	return t.threadRooms[threadId]
+}
+
+func (t *ThreadManager) AddMembers(roomId string, members []string) {
+	if t.threadRooms[roomId] == nil {
+		return
+	}
+	for _, member := range members {
+		// check if member is in room
+		t.threadRooms[roomId].Members[member] = true
+	}
+}
+
+func (t *ThreadManager) RemoveMember(roomId, member string) {
+	if t.threadRooms[roomId] == nil {
+		return
+	}
+	delete(t.threadRooms[roomId].Members, member)
 }

@@ -19,6 +19,11 @@ type UpdateRoomDTO struct {
 	Members []string `json:"members"`
 }
 
+type LeaveRoomDTO struct {
+	Id     string `json:"id"`
+	Member string `json:"member"`
+}
+
 type RoomRequestDTO struct {
 	Id string `json:"id"`
 }
@@ -55,9 +60,15 @@ func ToMessage(new NewMessageDTO) *threads.Message {
 }
 
 func ToRoomDTO(t *threads.ThreadRoom) *RoomDTO {
+	members := make([]string, len(t.Members))
+	i := 0
+	for member := range t.Members {
+		members[i] = member
+		i++
+	}
 	return &RoomDTO{
 		Title:     t.Title,
-		Members:   t.Members,
+		Members:   members,
 		IsPrivate: t.IsPrivate,
 	}
 }

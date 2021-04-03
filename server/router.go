@@ -27,7 +27,6 @@ func ginMiddleware(allowOrigin string) gin.HandlerFunc {
 			c.AbortWithStatus(204)
 			return
 		}
-
 		c.Request.Header.Del("Origin")
 
 		c.Next()
@@ -42,7 +41,8 @@ func NewHTTPServer(t *threads.ThreadManager, CORSOrigin string) *HTTPServer {
 	server.router.GET("/rooms", server.getRooms)
 	server.router.POST("/rooms", server.addRooms)
 	server.router.GET("/room", server.getRoomInfo)
-
+	server.router.POST("/room", server.updateRoomInfo)
+	server.router.POST("/leave", server.leave)
 	return server
 }
 
@@ -88,6 +88,29 @@ func (s *HTTPServer) getRoomInfo(g *gin.Context) {
 		fmt.Printf("Could not find room")
 		return
 	}
-	fmt.Printf("HEre")
+	fmt.Printf("Got room info for %s\n", roomId)
 	g.JSON(200, *dto.ToRoomDTO(room))
+}
+
+// Adds users to room only. Does not remove
+func (s *HTTPServer) updateRoomInfo(g *gin.Context) {
+	var update dto.UpdateRoomDTO
+	err := g.BindJSON(&update)
+	if err != nil {
+		log.Fatal(err)
+	}
+	s.threadManager.AddMembers(update.Id, update.Members)
+	fmt.Printf("Added users to %s\n", update.Id)
+	g.JSON(200, gin.H{})
+}
+
+func (s *HTTPServer) leave(g *gin.Context) {
+	var leave dto.LeaveRoomDTO
+	err := g.BindJSON(&leave)
+	if err != nil {
+		log.Fatal(err)
+	}
+	s.threadManager.RemoveMember(leave.Id, leave.Member)
+	fmt.Printf("Removed user %s\n", leave.Member)
+	g.JSON(200, gin.H{})
 }
