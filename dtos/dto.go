@@ -8,7 +8,18 @@ type NewRoomDTO struct {
 	Members   []string `json:"members"`
 }
 
-type NewRoomResponseDTO struct {
+type RoomDTO struct {
+	Title     string   `json:"title"`
+	IsPrivate bool     `json:"isPrivate"`
+	Members   []string `json:"members"`
+}
+
+type UpdateRoomDTO struct {
+	Id      string   `json:"id"`
+	Members []string `json:"members"`
+}
+
+type RoomRequestDTO struct {
 	Id string `json:"id"`
 }
 
@@ -40,5 +51,13 @@ func ToMessage(new NewMessageDTO) *threads.Message {
 	return &threads.Message{
 		Content: new.Content,
 		Sender:  new.Username,
+	}
+}
+
+func ToRoomDTO(t *threads.ThreadRoom) *RoomDTO {
+	return &RoomDTO{
+		Title:     t.Title,
+		Members:   t.Members,
+		IsPrivate: t.IsPrivate,
 	}
 }

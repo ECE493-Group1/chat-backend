@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	dto "catchat.com/dtos"
 	"catchat.com/models/threads"
@@ -40,6 +41,7 @@ func NewHTTPServer(t *threads.ThreadManager, CORSOrigin string) *HTTPServer {
 
 	server.router.GET("/rooms", server.getRooms)
 	server.router.POST("/rooms", server.addRooms)
+	server.router.GET("/room", server.getRoomInfo)
 
 	return server
 }
@@ -68,7 +70,24 @@ func (s *HTTPServer) addRooms(g *gin.Context) {
 	s.threadManager.AddThread(newRoom)
 	fmt.Println(newRoomDTO.Title)
 
-	g.JSON(200, dto.NewRoomResponseDTO{
+	g.JSON(200, dto.RoomRequestDTO{
 		Id: newRoom.Id,
 	})
+}
+
+func (s *HTTPServer) getRoomInfo(g *gin.Context) {
+	roomId := g.Query("id")
+	if roomId == "" {
+		g.JSON(http.StatusBadRequest, gin.H{"error": "Missing parameter"})
+		fmt.Printf("Could not find parameter")
+		return
+	}
+	room := s.threadManager.GetRoomInfo(roomId)
+	if room == nil {
+		g.JSON(http.StatusBadRequest, gin.H{"error": "Id not Found"})
+		fmt.Printf("Could not find room")
+		return
+	}
+	fmt.Printf("HEre")
+	g.JSON(200, *dto.ToRoomDTO(room))
 }

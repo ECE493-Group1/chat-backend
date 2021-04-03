@@ -10,11 +10,11 @@ type Message struct {
 }
 
 type ThreadRoom struct {
-	title     string
-	messages  []Message
+	Title     string
+	Messages  []Message
+	Members   []string
 	Id        string
-	users     []string
-	isPrivate bool
+	IsPrivate bool
 }
 
 type ThreadManager struct {
@@ -24,9 +24,9 @@ type ThreadManager struct {
 func NewThreadRoom(title string, users []string, isPrivate bool) *ThreadRoom {
 	return &ThreadRoom{
 		Id:        uuid.New().String(),
-		title:     title,
-		users:     users,
-		isPrivate: isPrivate,
+		Title:     title,
+		Members:   users,
+		IsPrivate: isPrivate,
 	}
 }
 
@@ -43,16 +43,20 @@ func (t *ThreadManager) GetAllRooms() ([]string, []string) {
 	ids := make([]string, len(t.threadRooms))
 
 	for k, v := range t.threadRooms {
-		titles[0] = v.title
+		titles[0] = v.Title
 		ids[0] = k
 	}
 	return titles, ids
 }
 
 func (t *ThreadManager) AddMessage(id string, m *Message) {
-	t.threadRooms[id].messages = append(t.threadRooms[id].messages, *m)
+	t.threadRooms[id].Messages = append(t.threadRooms[id].Messages, *m)
 }
 
 func (t *ThreadManager) GetThreadMessages(threadId string) []Message {
-	return t.threadRooms[threadId].messages
+	return t.threadRooms[threadId].Messages
+}
+
+func (t *ThreadManager) GetRoomInfo(threadId string) *ThreadRoom {
+	return t.threadRooms[threadId]
 }
