@@ -39,7 +39,7 @@ func NewHTTPServer(t *threads.ThreadManager, CORSOrigin string) *HTTPServer {
 	server.router.Use(ginMiddleware(CORSOrigin))
 
 	server.router.GET("/rooms", server.getRooms)
-	server.router.POST("/rooms", server.addRooms)
+	server.router.POST("/rooms", server.addRoom)
 	server.router.GET("/room", server.getRoomInfo)
 	server.router.POST("/room", server.updateRoomInfo)
 	server.router.POST("/leave", server.leave)
@@ -52,15 +52,13 @@ func (s *HTTPServer) AddSocketRoutes(server *socketio.Server) {
 }
 
 func (s *HTTPServer) getRooms(g *gin.Context) {
-	chatRoomNames, chatRoomIds := s.threadManager.GetAllRooms()
-	g.JSON(200, gin.H{
-		"rooms": chatRoomNames,
-		"ids":   chatRoomIds,
-	})
+	publicRooms := s.threadManager.GetAllRooms()
+	roomListDTO := dto.ToRoomListDTO(publicRooms)
+	g.JSON(200, roomListDTO)
 	fmt.Println("Grabbed Rooms")
 }
 
-func (s *HTTPServer) addRooms(g *gin.Context) {
+func (s *HTTPServer) addRoom(g *gin.Context) {
 	var newRoomDTO dto.NewRoomDTO
 	err := g.BindJSON(&newRoomDTO)
 	if err != nil {

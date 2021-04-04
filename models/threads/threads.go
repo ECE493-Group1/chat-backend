@@ -1,6 +1,8 @@
 package threads
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -10,11 +12,12 @@ type Message struct {
 }
 
 type ThreadRoom struct {
-	Title     string
-	Messages  []Message
-	Members   map[string]bool
-	Id        string
-	IsPrivate bool
+	Title      string
+	Messages   []Message
+	Members    map[string]bool
+	Id         string
+	IsPrivate  bool
+	UpdateTime time.Time
 }
 
 type ThreadManager struct {
@@ -27,10 +30,11 @@ func NewThreadRoom(title string, members []string, isPrivate bool) *ThreadRoom {
 		memberMap[member] = true
 	}
 	return &ThreadRoom{
-		Id:        uuid.New().String(),
-		Title:     title,
-		Members:   memberMap,
-		IsPrivate: isPrivate,
+		Id:         uuid.New().String(),
+		Title:      title,
+		Members:    memberMap,
+		IsPrivate:  isPrivate,
+		UpdateTime: time.Now(),
 	}
 }
 
@@ -42,19 +46,19 @@ func (t *ThreadManager) AddThread(newThread *ThreadRoom) {
 	t.threadRooms[newThread.Id] = newThread
 }
 
-func (t *ThreadManager) GetAllRooms() ([]string, []string) {
-	titles := make([]string, len(t.threadRooms))
-	ids := make([]string, len(t.threadRooms))
-
-	for k, v := range t.threadRooms {
-		titles[0] = v.Title
-		ids[0] = k
+func (t *ThreadManager) GetAllRooms() []*ThreadRoom {
+	publicRooms := make([]*ThreadRoom, 0)
+	for _, room := range t.threadRooms {
+		if !room.IsPrivate {
+			publicRooms = append(publicRooms, room)
+		}
 	}
-	return titles, ids
+	return publicRooms
 }
 
 func (t *ThreadManager) AddMessage(id string, m *Message) {
 	t.threadRooms[id].Messages = append(t.threadRooms[id].Messages, *m)
+	t.threadRooms[id].UpdateTime = time.Now()
 }
 
 func (t *ThreadManager) GetThreadMessages(threadId string) []Message {
