@@ -49,6 +49,7 @@ type RoomListItemDTO struct {
 	LastMessageTime int64    `json:"lastMessageTime"`
 	Members         []string `json:"members"`
 	LastMessage     string   `json:"lastMessage"`
+	IsPrivate       bool     `json:"isPrivate"`
 }
 
 type RoomListDTO struct {
@@ -107,6 +108,7 @@ func ToRoomListDTO(rooms []*threads.ThreadRoom) *RoomListDTO {
 			LastMessageTime: room.UpdateTime.Unix(),
 			Members:         memberList,
 			LastMessage:     lastMessage,
+			IsPrivate:       room.IsPrivate,
 		}
 	}
 	return roomList

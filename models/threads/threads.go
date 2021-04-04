@@ -56,6 +56,16 @@ func (t *ThreadManager) GetAllRooms() []*ThreadRoom {
 	return publicRooms
 }
 
+func (t *ThreadManager) GetSubscribedRooms(username string) []*ThreadRoom {
+	subbedRooms := make([]*ThreadRoom, 0)
+	for _, room := range t.threadRooms {
+		if room.Members[username] {
+			subbedRooms = append(subbedRooms, room)
+		}
+	}
+	return subbedRooms
+}
+
 func (t *ThreadManager) AddMessage(id string, m *Message) {
 	t.threadRooms[id].Messages = append(t.threadRooms[id].Messages, *m)
 	t.threadRooms[id].UpdateTime = time.Now()

@@ -39,6 +39,7 @@ func NewHTTPServer(t *threads.ThreadManager, CORSOrigin string) *HTTPServer {
 	server.router.Use(ginMiddleware(CORSOrigin))
 
 	server.router.GET("/rooms", server.getRooms)
+	server.router.GET("/subscribed", server.getSubscribedRooms)
 	server.router.POST("/rooms", server.addRoom)
 	server.router.GET("/room", server.getRoomInfo)
 	server.router.POST("/room", server.updateRoomInfo)
@@ -55,7 +56,21 @@ func (s *HTTPServer) getRooms(g *gin.Context) {
 	publicRooms := s.threadManager.GetAllRooms()
 	roomListDTO := dto.ToRoomListDTO(publicRooms)
 	g.JSON(200, roomListDTO)
-	fmt.Println("Grabbed Rooms")
+	fmt.Println("Get all threads")
+}
+
+func (s *HTTPServer) getSubscribedRooms(g *gin.Context) {
+	username := g.Query("username")
+	if username == "" {
+		g.JSON(http.StatusBadRequest, gin.H{"error": "Missing parameter"})
+		fmt.Printf("Could not find parameter")
+		return
+	}
+	subbedRooms := s.threadManager.GetSubscribedRooms(username)
+	subbedListDTO := dto.ToRoomListDTO(subbedRooms)
+
+	g.JSON(200, subbedListDTO)
+	fmt.Printf("Get %s subscriptions\n", username)
 }
 
 func (s *HTTPServer) addRoom(g *gin.Context) {
