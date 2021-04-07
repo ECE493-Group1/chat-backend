@@ -12,7 +12,7 @@ func Init() {
 	go socketServer.server.Serve()
 	defer socketServer.server.Close()
 
-	httpServer := NewHTTPServer(threadManager, config.CORSOrigin)
+	httpServer := NewHTTPServer(threadManager, config)
 	httpServer.AddSocketRoutes(socketServer.server)
 	httpServer.router.Run(config.Port)
 }

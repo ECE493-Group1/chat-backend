@@ -1,10 +1,13 @@
 package server
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
+	"catchat.com/config"
 	dto "catchat.com/dtos"
 	"catchat.com/models/threads"
 	"github.com/gin-gonic/gin"
@@ -14,6 +17,7 @@ import (
 type HTTPServer struct {
 	router        *gin.Engine
 	threadManager *threads.ThreadManager
+	config        *config.Config
 }
 
 func ginMiddleware(allowOrigin string) gin.HandlerFunc {
@@ -33,17 +37,19 @@ func ginMiddleware(allowOrigin string) gin.HandlerFunc {
 	}
 }
 
-func NewHTTPServer(t *threads.ThreadManager, CORSOrigin string) *HTTPServer {
-	server := &HTTPServer{threadManager: t}
+func NewHTTPServer(t *threads.ThreadManager, config *config.Config) *HTTPServer {
+	server := &HTTPServer{threadManager: t, config: config}
 	server.router = gin.New()
-	server.router.Use(ginMiddleware(CORSOrigin))
+	server.router.Use(ginMiddleware(config.CORSOrigin))
 
 	server.router.GET("/rooms", server.getRooms)
 	server.router.GET("/subscribed", server.getSubscribedRooms)
 	server.router.POST("/rooms", server.addRoom)
 	server.router.GET("/room", server.getRoomInfo)
 	server.router.POST("/room", server.updateRoomInfo)
+	server.router.POST("/roomlist", server.getRoomsById)
 	server.router.POST("/leave", server.leave)
+	go server.keywordUpdateLoop()
 	return server
 }
 
@@ -126,4 +132,41 @@ func (s *HTTPServer) leave(g *gin.Context) {
 	s.threadManager.RemoveMember(leave.Id, leave.Member)
 	fmt.Printf("Removed user %s\n", leave.Member)
 	g.JSON(200, gin.H{})
+}
+
+func (s *HTTPServer) getRoomsById(g *gin.Context) {
+	var ids dto.RoomListRequestDTO
+	err := g.BindJSON(&ids)
+	if err != nil {
+		log.Fatal(err)
+	}
+	rooms := s.threadManager.GetThreadsById(ids.Ids)
+	roomListDTO := dto.ToRoomListDTO(rooms)
+	fmt.Printf("Getting rooms by Id\n")
+	g.JSON(200, roomListDTO)
+}
+
+// Sends Messages to the keyword process. This is run as
+func (s *HTTPServer) keywordUpdateLoop() {
+	t := s.threadManager
+	for {
+		item, err := t.MessageQueue.Get(1)
+		if err != nil {
+			fmt.Printf(("Error grabbing from keyword queue"))
+			continue
+		}
+		message := item[0].(threads.Message)
+		json_data, err := json.Marshal(dto.ToKeyWordUpdateDTO(message.Content, message.RoomId))
+		if err != nil {
+			fmt.Printf("Could not convert to JSON")
+		}
+
+		resp, err := http.Post(s.config.KeywordEndpoint, "application/json", bytes.NewReader(json_data))
+
+		if err != nil || resp.StatusCode != 200 {
+			fmt.Printf("Error sending message to keyword service")
+		}
+		fmt.Printf("Submitted message to KW service")
+
+	}
 }

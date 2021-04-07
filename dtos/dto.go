@@ -28,6 +28,10 @@ type RoomRequestDTO struct {
 	Id string `json:"id"`
 }
 
+type RoomListRequestDTO struct {
+	Ids []string `json:"ids"`
+}
+
 type NewMessageDTO struct {
 	Content  string `json:"content"`
 	Username string `json:"username"`
@@ -37,6 +41,11 @@ type NewMessageDTO struct {
 type MessageDTO struct {
 	Content  string `json:"content"`
 	Username string `json:"username"`
+}
+
+type KeyWordUpdateDTO struct {
+	Content string `json:"message"`
+	RoomId  string `json:"chatroom_id"`
 }
 
 type MessageListDTO struct {
@@ -69,6 +78,7 @@ func ToMessage(new NewMessageDTO) *threads.Message {
 	return &threads.Message{
 		Content: new.Content,
 		Sender:  new.Username,
+		RoomId:  new.RoomId,
 	}
 }
 
@@ -112,4 +122,11 @@ func ToRoomListDTO(rooms []*threads.ThreadRoom) *RoomListDTO {
 		}
 	}
 	return roomList
+}
+
+func ToKeyWordUpdateDTO(content, roomId string) KeyWordUpdateDTO {
+	return KeyWordUpdateDTO{
+		Content: content,
+		RoomId:  roomId,
+	}
 }
