@@ -152,21 +152,21 @@ func (s *HTTPServer) keywordUpdateLoop() {
 	for {
 		item, err := t.MessageQueue.Get(1)
 		if err != nil {
-			fmt.Printf(("Error grabbing from keyword queue"))
+			fmt.Printf(("Error grabbing from keyword queue\n"))
 			continue
 		}
 		message := item[0].(threads.Message)
 		json_data, err := json.Marshal(dto.ToKeyWordUpdateDTO(message.Content, message.RoomId))
 		if err != nil {
-			fmt.Printf("Could not convert to JSON")
+			fmt.Printf("Could not convert to JSON\n")
 		}
 
 		resp, err := http.Post(s.config.KeywordEndpoint, "application/json", bytes.NewReader(json_data))
 
 		if err != nil || resp.StatusCode != 200 {
-			fmt.Printf("Error sending message to keyword service")
+			fmt.Printf("Error sending message to keyword service\n")
 		}
-		fmt.Printf("Submitted message to KW service")
+		fmt.Printf("Submitted message to KW service\n")
 
 	}
 }
