@@ -49,7 +49,10 @@ func NewHTTPServer(t *threads.ThreadManager, config *config.Config) *HTTPServer 
 	server.router.POST("/room", server.updateRoomInfo)
 	server.router.POST("/roomlist", server.getRoomsById)
 	server.router.POST("/leave", server.leave)
-	go server.keywordUpdateLoop()
+
+	if config.KeywordUpdates {
+		go server.keywordUpdateLoop()
+	}
 	return server
 }
 
